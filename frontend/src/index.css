@@ -484,6 +484,63 @@ button {
   opacity: 0.6;
 }
 
+/* --- Realtime status pill: connection + live count, bottom-right --------- */
+.realtime-status {
+  position: fixed;
+  right: 14px;
+  bottom: 14px;
+  z-index: 20;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(16, 16, 30, 0.76);
+  color: #fff;
+  font-size: 0.64rem;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.realtime-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--gold);
+  box-shadow: 0 0 10px rgba(255, 215, 64, 0.35);
+}
+
+.realtime-status.connected .realtime-dot {
+  background: var(--dot);
+  box-shadow: 0 0 12px var(--dot-glow);
+}
+
+.realtime-status.disconnected .realtime-dot {
+  background: var(--bomb);
+  box-shadow: 0 0 12px var(--bomb-glow);
+}
+
+.realtime-label {
+  color: var(--dot);
+}
+
+.realtime-status.connecting .realtime-label {
+  color: var(--gold);
+}
+
+.realtime-status.disconnected .realtime-label {
+  color: var(--bomb);
+}
+
+.realtime-count {
+  min-width: 14px;
+  padding: 0 4px;
+  border: 1px solid rgba(0, 229, 255, 0.24);
+  border-radius: 999px;
+  text-align: center;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
