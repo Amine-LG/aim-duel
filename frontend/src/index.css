@@ -682,6 +682,68 @@ button {
   text-align: center;
 }
 
+/* --- Multiplayer race --------------------------------------------------- */
+.race-hud {
+  position: relative;
+  width: 100%;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  gap: 12px;
+  padding: 12px 48px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.race-score {
+  min-width: 0;
+  text-align: center;
+}
+
+.race-score span {
+  display: block;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 0.6rem;
+  font-weight: 900;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.race-score strong {
+  display: block;
+  color: #fff;
+  font-size: clamp(1.8rem, 6vw, 2.6rem);
+  font-weight: 900;
+  line-height: 1;
+}
+
+.race-score.self strong {
+  color: var(--dot);
+  text-shadow: 0 0 22px var(--dot-glow);
+}
+
+/* Results reuse .solo-results / .result-stats / .result-stat (+ win/loss tint) */
+.result-icon {
+  font-size: clamp(2.4rem, 9vw, 4.8rem);
+  line-height: 1;
+}
+
+.solo-results.win h2,
+.solo-results.win .result-icon {
+  color: #ffe066;
+  text-shadow: 0 0 24px rgba(255, 224, 102, 0.35);
+}
+
+.solo-results.loss h2,
+.solo-results.loss .result-icon {
+  color: var(--bomb);
+  text-shadow: 0 0 26px var(--bomb-glow);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

@@ -1,8 +1,10 @@
 // Aim Duel backend — entry point. Express probes + a Socket.IO realtime layer
-// with presence and the room/lobby domain (create, join, ready). The match loop
-// and a refactor into src/ modules come once this file genuinely earns it.
+// with presence, the room/lobby domain, and the match loop (server-owned
+// countdown → shared targets → first to WIN_SCORE). Still one file; the refactor
+// into src/ modules is the next step now that it has clearly earned it.
 
 const http = require('node:http');
+const crypto = require('node:crypto');
 const express = require('express');
 const { Server } = require('socket.io');
 
@@ -11,9 +13,16 @@ const MAX_ROOMS = Number.parseInt(process.env.MAX_ROOMS, 10) || 200;
 // Ambiguous characters (0/O, 1/I) are left out so codes are easy to read aloud.
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
 
+// Match tuning.
+const WIN_SCORE = 10;
+const COUNTDOWN = ['3', '2', '1', 'GO'];
+const COUNTDOWN_INTERVAL_MS = 800; // gap between countdown ticks
+const TARGET_LIFETIME_MS = 2000; // a shared target nobody clicks just respawns
+const NEXT_TARGET_DELAY_MS = 600; // pause between one target resolving and the next
+
 // --- State (in-memory, single process) -------------------------------------
 const online = new Map(); // presenceId -> socketId
-const rooms = new Map(); // code -> { code, status, players: [...] }
+const rooms = new Map(); // code -> room
 
 // --- Pure helpers ----------------------------------------------------------
 function isValidPresenceId(v) {
@@ -27,6 +36,10 @@ function normalizeNickname(v) {
 function normalizeRoomCode(v) {
   const code = typeof v === 'string' ? v.trim().toUpperCase() : '';
   return /^[A-Z0-9]{6}$/.test(code) ? code : '';
+}
+
+function makeId() {
+  return crypto.randomUUID();
 }
 
 function makeRoomCode() {
@@ -46,7 +59,8 @@ function freshPlayer(socket, nickname) {
     presenceId: socket.data.presenceId,
     nickname,
     ready: false,
-    connected: true
+    connected: true,
+    score: 0
   };
 }
 
@@ -54,9 +68,15 @@ function connectedPlayers(room) {
   return room.players.filter((p) => p.connected);
 }
 
+// Only recomputes the lobby status; an active match owns the status itself.
 function refreshStatus(room) {
+  if (['countdown', 'playing', 'finished'].includes(room.status)) return;
   const live = connectedPlayers(room);
   room.status = live.length === 2 && live.every((p) => p.ready) ? 'ready' : 'waiting';
+}
+
+function scoresOf(room) {
+  return room.players.map((p, i) => ({ slot: i + 1, nickname: p.nickname, score: p.score || 0 }));
 }
 
 // Public payload — socketId/presenceId are deliberately never exposed to peers.
@@ -68,7 +88,8 @@ function publicRoom(room) {
       slot: i + 1,
       nickname: p.nickname,
       ready: p.ready,
-      connected: p.connected
+      connected: p.connected,
+      score: p.score || 0
     }))
   };
 }
@@ -102,14 +123,147 @@ function broadcastRoom(room) {
   io.to(channel(room.code)).emit('room_state', { room: publicRoom(room), status: room.status });
 }
 
+// --- Match loop ------------------------------------------------------------
+// Every timer a room can own is cleared here, so aborting a match (a leave, a
+// disconnect, a finish) can never leak a pending spawn or countdown tick.
+function clearMatchTimers(room) {
+  (room.countdownTimers || []).forEach(clearTimeout);
+  room.countdownTimers = [];
+  if (room.game) {
+    clearTimeout(room.game.targetTimer);
+    clearTimeout(room.game.nextTimer);
+  }
+}
+
+function startCountdown(room) {
+  room.status = 'countdown';
+  room.countdownTimers = [];
+  COUNTDOWN.forEach((value, i) => {
+    room.countdownTimers.push(
+      setTimeout(() => {
+        io.to(channel(room.code)).emit('countdown_tick', { value });
+      }, i * COUNTDOWN_INTERVAL_MS)
+    );
+  });
+  room.countdownTimers.push(
+    setTimeout(() => startMatch(room), COUNTDOWN.length * COUNTDOWN_INTERVAL_MS)
+  );
+  broadcastRoom(room);
+}
+
+function startMatch(room) {
+  if (connectedPlayers(room).length !== 2) {
+    // Someone left during the countdown — fall back to the lobby.
+    room.status = 'waiting';
+    room.players.forEach((p) => {
+      p.ready = false;
+    });
+    broadcastRoom(room);
+    return;
+  }
+  room.status = 'playing';
+  room.players.forEach((p) => {
+    p.score = 0;
+    p.ready = false;
+  });
+  room.game = { matchId: makeId(), target: null, targetTimer: null, nextTimer: null };
+  io.to(channel(room.code)).emit('game_started', {
+    matchId: room.game.matchId,
+    winScore: WIN_SCORE,
+    scores: scoresOf(room)
+  });
+  broadcastRoom(room);
+  spawnTarget(room);
+}
+
+function spawnTarget(room) {
+  if (!room.game || room.status !== 'playing') return;
+  const target = {
+    id: makeId(),
+    matchId: room.game.matchId,
+    // Ratios in the same safe band the solo arena uses; clients multiply by the
+    // arena size so both see the target at the same spot.
+    x: Number((0.1 + Math.random() * 0.8).toFixed(4)),
+    y: Number((0.14 + Math.random() * 0.66).toFixed(4)),
+    resolved: false
+  };
+  room.game.target = target;
+  io.to(channel(room.code)).emit('target_spawn', {
+    target: { id: target.id, matchId: target.matchId, x: target.x, y: target.y },
+    scores: scoresOf(room)
+  });
+  room.game.targetTimer = setTimeout(() => {
+    if (room.game?.target === target && !target.resolved) {
+      target.resolved = true;
+      io.to(channel(room.code)).emit('target_missed', { targetId: target.id, scores: scoresOf(room) });
+      scheduleNext(room);
+    }
+  }, TARGET_LIFETIME_MS);
+}
+
+function scheduleNext(room) {
+  if (!room.game || room.status !== 'playing') return;
+  room.game.nextTimer = setTimeout(() => spawnTarget(room), NEXT_TARGET_DELAY_MS);
+}
+
+function finishGame(room, winnerSlot) {
+  clearMatchTimers(room);
+  room.status = 'finished';
+  const scores = scoresOf(room);
+  room.game = null;
+  io.to(channel(room.code)).emit('game_over', { winnerSlot, scores });
+  broadcastRoom(room);
+}
+
+function handleTargetClick(socket, payload) {
+  const room = rooms.get(socket.data.roomCode);
+  if (!room || room.status !== 'playing' || !room.game) return;
+  const target = room.game.target;
+  if (!target || target.resolved) return;
+  // Reject clicks for a stale target/match (race against the next spawn).
+  if (payload?.targetId !== target.id || payload?.matchId !== room.game.matchId) return;
+  const player = room.players.find((p) => p.socketId === socket.id);
+  if (!player) return;
+
+  // First valid click the server receives resolves the target and scores.
+  target.resolved = true;
+  clearTimeout(room.game.targetTimer);
+  player.score = (player.score || 0) + 1;
+  const slot = room.players.indexOf(player) + 1;
+  io.to(channel(room.code)).emit('target_claimed', {
+    targetId: target.id,
+    winnerSlot: slot,
+    scores: scoresOf(room)
+  });
+
+  if (player.score >= WIN_SCORE) {
+    finishGame(room, slot);
+  } else {
+    scheduleNext(room);
+  }
+}
+
+function returnToLobby(room) {
+  clearMatchTimers(room);
+  room.game = null;
+  room.players.forEach((p) => {
+    p.ready = false;
+    p.score = 0;
+  });
+  room.status = 'waiting';
+  broadcastRoom(room);
+}
+
 function setReady(socket, ready) {
   const room = rooms.get(socket.data.roomCode);
   if (!room) return;
+  if (room.status === 'countdown' || room.status === 'playing') return; // locked mid-match
   const player = room.players.find((p) => p.socketId === socket.id);
   if (!player) return;
   player.ready = ready;
   refreshStatus(room);
   broadcastRoom(room);
+  if (room.status === 'ready') startCountdown(room);
 }
 
 function leaveRoom(socket) {
@@ -128,8 +282,19 @@ function leaveRoom(socket) {
   }
 
   if (connectedPlayers(room).length === 0) {
+    clearMatchTimers(room);
     rooms.delete(code); // nobody left — drop it so it can't linger
     return;
+  }
+
+  // If a countdown or match was in flight, abort it back to the lobby.
+  if (['countdown', 'playing', 'finished'].includes(room.status)) {
+    clearMatchTimers(room);
+    room.game = null;
+    room.players.forEach((p) => {
+      p.ready = false;
+    });
+    room.status = 'waiting';
   }
 
   refreshStatus(room);
@@ -213,6 +378,11 @@ io.on('connection', (socket) => {
 
   socket.on('player_ready', () => setReady(socket, true));
   socket.on('player_unready', () => setReady(socket, false));
+  socket.on('target_click', (payload = {}) => handleTargetClick(socket, payload));
+  socket.on('return_to_lobby', () => {
+    const room = rooms.get(socket.data.roomCode);
+    if (room && room.status === 'finished') returnToLobby(room);
+  });
   socket.on('leave_room', () => leaveRoom(socket));
 
   socket.on('disconnect', () => {
