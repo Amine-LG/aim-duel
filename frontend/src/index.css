@@ -423,6 +423,67 @@ button {
   font-size: 0.9rem;
 }
 
+/* --- Solo countdown: 3·2·1·GO before a run (from the original) ----------- */
+.solo-countdown {
+  background: radial-gradient(ellipse at center, #001a1f 0%, var(--bg) 70%);
+}
+
+.countdown-value {
+  color: var(--dot);
+  font-size: clamp(5rem, 20vw, 10rem);
+  font-weight: 900;
+  line-height: 1;
+  text-shadow: 0 0 40px var(--dot-glow);
+  animation:
+    tickPop 0.3s cubic-bezier(0.34, 1.56, 0.64, 1),
+    countdownPulse 1s ease-in-out 0.3s infinite;
+}
+
+@keyframes tickPop {
+  from { opacity: 0.4; transform: scale(1.35); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes countdownPulse {
+  0%, 100% { transform: scale(1); }
+  50%      { transform: scale(0.9); }
+}
+
+/* --- Mute toggle: fixed pill, bottom-left (from the original) ------------ */
+.sound-toggle {
+  position: fixed;
+  left: 14px;
+  bottom: 14px;
+  z-index: 20;
+  min-width: 34px;
+  min-height: 26px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3px 9px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(16, 16, 30, 0.76);
+  box-shadow: 0 0 18px rgba(0, 0, 0, 0.25);
+  cursor: pointer;
+  font-size: 0.76rem;
+  line-height: 1;
+  transition: border-color 0.12s, transform 0.12s;
+}
+
+.sound-toggle:hover {
+  border-color: rgba(0, 229, 255, 0.4);
+  transform: scale(1.06);
+}
+
+.sound-toggle:active {
+  transform: scale(0.94);
+}
+
+.sound-toggle.muted {
+  opacity: 0.6;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

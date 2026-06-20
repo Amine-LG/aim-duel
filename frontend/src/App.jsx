@@ -2,11 +2,13 @@
 // two screens that exist (home, solo) from a single `screen` state. As the game
 // grows this becomes a richer router (the original keys off the match's mode),
 // but it stays a thin shell — behaviour lives in the screens and, later, the
-// socket layer.
+// socket layer. The mute toggle is fixed-position and rendered globally so it's
+// reachable from every screen.
 
 import { useState } from 'react';
 import HomeScreen from './screens/HomeScreen';
 import SoloScreen from './screens/SoloScreen';
+import SoundToggle from './SoundToggle';
 
 export default function App() {
   const [screen, setScreen] = useState('home');
@@ -19,6 +21,7 @@ export default function App() {
         <HomeScreen onOpenSolo={() => setScreen('solo')} />
       )}
       {screen === 'solo' && <SoloScreen onBack={() => setScreen('home')} />}
+      <SoundToggle />
     </div>
   );
 }

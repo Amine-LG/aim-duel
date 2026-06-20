@@ -1,17 +1,19 @@
 // Solo Practice — a small, fully client-side aim game. No backend, no network.
-// A run is TOTAL cyan targets: click each to score (and see your reaction time
-// float up); let one expire or click empty arena and it's a miss that breaks
-// your streak. After a few hits, red bombs start mixing in — click one and the
-// run ends (GOTCHA). Finish the run to see your average and best reaction time.
-// A 3·2·1 countdown comes in a later step.
+// A run starts with a 3·2·1·GO countdown, then it's TOTAL cyan targets: click
+// each to score (and see your reaction time float up); let one expire or click
+// empty arena and it's a miss that breaks your streak. After a few hits, red
+// bombs mix in — click one and the run ends (GOTCHA). Finish to see your average
+// and best reaction time. Every beat has a synthesized sound (mute bottom-left).
 
 import { useEffect, useRef, useState } from 'react';
+import { sounds } from '../sounds.js';
 
 const TOTAL = 20; // cyan targets per run
 const CYAN_TTL = 1500; // ms a cyan target lives before it expires (a miss)
 const BOMB_TTL = 1000; // bombs are quicker — but you want to ignore them anyway
 const BOMB_AFTER = 3; // bombs can appear once you've hit this many
 const BOMB_CHANCE = 0.28; // ...and then this often
+const COUNTDOWN = ['3', '2', '1', 'GO'];
 
 // A target is a random spot plus a type. Bombs only start mixing in after a few
 // hits, so the opening is a gentle warm-up (matches the original's pacing).
@@ -25,7 +27,8 @@ function makeTarget(hits) {
 }
 
 export default function SoloScreen({ onBack }) {
-  const [phase, setPhase] = useState('playing'); // 'playing' | 'results' | 'gameover'
+  const [phase, setPhase] = useState('countdown'); // 'countdown' | 'playing' | 'results' | 'gameover'
+  const [count, setCount] = useState(0); // index into COUNTDOWN
   const [hits, setHits] = useState(0);
   const [misses, setMisses] = useState(0);
   const [streak, setStreak] = useState(0);
@@ -39,15 +42,36 @@ export default function SoloScreen({ onBack }) {
   const spawnedAt = useRef(performance.now());
   const floatId = useRef(0);
 
-  // Each target gets a lifetime. A cyan target that expires is a miss; a bomb
-  // that expires was correctly avoided (no penalty). Either way, respawn. The
-  // effect re-runs whenever the target changes (a respawn) or the run ends.
+  // The 3·2·1·GO countdown that opens every run, then hands off to 'playing'.
+  useEffect(() => {
+    if (phase !== 'countdown') return undefined;
+    setCount(0);
+    sounds.countdownTick();
+    let step = 0;
+    const id = setInterval(() => {
+      step += 1;
+      if (step < COUNTDOWN.length) {
+        setCount(step);
+        if (COUNTDOWN[step] === 'GO') sounds.go();
+        else sounds.countdownTick();
+      } else {
+        clearInterval(id);
+        setPhase('playing');
+      }
+    }, 700);
+    return () => clearInterval(id);
+  }, [phase]);
+
+  // While playing, each target gets a lifetime. A cyan target that expires is a
+  // miss; a bomb that expires was correctly avoided (no penalty). Either way,
+  // respawn. Re-runs whenever the target changes (a respawn) or the run ends.
   useEffect(() => {
     if (phase !== 'playing') return undefined;
     spawnedAt.current = performance.now();
     const ttl = target.type === 'bomb' ? BOMB_TTL : CYAN_TTL;
     const timer = setTimeout(() => {
       if (target.type === 'cyan') {
+        sounds.miss();
         setMisses((n) => n + 1);
         setStreak(0);
       }
@@ -66,11 +90,13 @@ export default function SoloScreen({ onBack }) {
     event.stopPropagation(); // a hit must not also register as an arena miss
 
     if (target.type === 'bomb') {
+      sounds.bomb();
       setPhase('gameover'); // clicked a bomb — run over
       return;
     }
 
     const reactionMs = Math.round(performance.now() - spawnedAt.current);
+    sounds.hit();
     addFloat(target.x, target.y, `${reactionMs}ms`, reactionMs < 250 ? '#00e676' : 'var(--dot)');
     setBest((b) => (b == null ? reactionMs : Math.min(b, reactionMs)));
     setTotalMs((t) => t + reactionMs);
@@ -79,6 +105,7 @@ export default function SoloScreen({ onBack }) {
     const nextHits = hits + 1;
     setHits(nextHits);
     if (nextHits >= TOTAL) {
+      sounds.finish();
       setPhase('results'); // run complete
     } else {
       setTarget(makeTarget(nextHits));
@@ -87,6 +114,7 @@ export default function SoloScreen({ onBack }) {
   }
 
   function missArena() {
+    sounds.miss();
     setMisses((n) => n + 1);
     setStreak(0);
   }
@@ -100,7 +128,17 @@ export default function SoloScreen({ onBack }) {
     setFloats([]);
     setTarget(makeTarget(0));
     setSpawn((n) => n + 1);
-    setPhase('playing');
+    setPhase('countdown'); // replay the countdown each run
+  }
+
+  if (phase === 'countdown') {
+    return (
+      <section className="screen solo-countdown">
+        <div className="countdown-value" key={count}>
+          {COUNTDOWN[count]}
+        </div>
+      </section>
+    );
   }
 
   if (phase === 'gameover') {
