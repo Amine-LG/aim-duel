@@ -2,9 +2,23 @@
 // Everything it renders comes from the `room` the parent keeps in sync with the
 // backend's room_state broadcasts — this screen holds no game state itself.
 
+import { useState } from 'react';
+
 export default function LobbyScreen({ room, selfSlot, onReady, onUnready, onLeave }) {
   const me = room.players.find((player) => player.slot === selfSlot);
   const iAmReady = Boolean(me?.ready);
+  const [copied, setCopied] = useState(false);
+
+  const copyCode = async () => {
+    try {
+      await navigator.clipboard.writeText(room.code);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1500);
+    } catch {
+      // Clipboard can be blocked (e.g. a non-secure context); ignore — the code
+      // is on screen to read and type either way.
+    }
+  };
 
   return (
     <section className="screen">
@@ -13,6 +27,9 @@ export default function LobbyScreen({ room, selfSlot, onReady, onUnready, onLeav
       <div className="room-code-row">
         <span className="slot-label">Room code</span>
         <div className="room-code">{room.code}</div>
+        <button className="btn btn-ghost btn-small" type="button" onClick={copyCode}>
+          {copied ? 'Copied!' : 'Copy code'}
+        </button>
       </div>
 
       <div className="lobby-slots">
