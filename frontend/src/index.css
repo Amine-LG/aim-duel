@@ -306,12 +306,20 @@ button {
   padding: 0;
   border: 0;
   border-radius: 50%;
-  background: radial-gradient(circle at 35% 35%, #80f5ff, var(--dot));
-  box-shadow: 0 0 20px var(--dot-glow), 0 0 60px rgba(0, 229, 255, 0.12);
   cursor: pointer;
   transform: translate(-50%, -50%);
   -webkit-tap-highlight-color: transparent;
   animation: targetPop 0.12s cubic-bezier(0.34, 1.8, 0.64, 1);
+}
+
+.solo-target.cyan {
+  background: radial-gradient(circle at 35% 35%, #80f5ff, var(--dot));
+  box-shadow: 0 0 20px var(--dot-glow), 0 0 60px rgba(0, 229, 255, 0.12);
+}
+
+.solo-target.bomb {
+  background: radial-gradient(circle at 35% 35%, #ff8a80, var(--bomb));
+  box-shadow: 0 0 20px var(--bomb-glow), 0 0 60px rgba(255, 23, 68, 0.12);
 }
 
 @keyframes targetPop {
@@ -392,6 +400,27 @@ button {
   color: var(--dot);
   font-size: 1.3rem;
   font-weight: 900;
+}
+
+/* --- Solo game-over: clicked a bomb (from the original) ------------------ */
+.solo-gameover {
+  background: radial-gradient(ellipse at center, #1a0008 0%, var(--bg) 70%);
+  text-align: center;
+}
+
+.solo-gameover .go-icon {
+  font-size: 4rem;
+}
+
+.solo-gameover h2 {
+  color: var(--bomb);
+  font-size: clamp(1.8rem, 5vw, 2.8rem);
+  font-weight: 900;
+}
+
+.solo-gameover .go-sub {
+  color: var(--muted);
+  font-size: 0.9rem;
 }
 
 @media (prefers-reduced-motion: reduce) {
