@@ -214,20 +214,18 @@ button {
 }
 
 .solo-hud {
+  position: relative;
   width: 100%;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
-  padding: 12px 20px;
+  /* Right padding reserves space for the absolutely-positioned leave button so
+     the spread stats stay put whether or not it's there (as in the original). */
+  padding: 12px 48px 12px 20px;
   border-bottom: 1px solid var(--border);
   background: var(--surface);
-}
-
-.solo-stats {
-  display: flex;
-  gap: 28px;
 }
 
 .solo-stat {
@@ -251,10 +249,30 @@ button {
   color: var(--dot);
 }
 
+.solo-progress {
+  flex: 1;
+  height: 4px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: var(--border);
+}
+
+.solo-progress-fill {
+  width: 0%;
+  height: 100%;
+  border-radius: 2px;
+  background: var(--dot);
+  box-shadow: 0 0 8px var(--dot-glow);
+  transition: width 0.15s;
+}
+
 .solo-leave {
+  position: absolute;
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
   width: 30px;
   height: 30px;
-  flex: 0 0 auto;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -271,7 +289,7 @@ button {
 .solo-leave:hover {
   border-color: rgba(255, 23, 68, 0.45);
   color: #ff8aa0;
-  transform: scale(1.08);
+  transform: translateY(-50%) scale(1.08);
 }
 
 .solo-arena {
@@ -299,6 +317,81 @@ button {
 @keyframes targetPop {
   from { opacity: 0; transform: translate(-50%, -50%) scale(0.2); }
   to   { opacity: 1; transform: translate(-50%, -50%) scale(1); }
+}
+
+/* Reaction-time readout that floats up from a hit target (from the original). */
+.float-ms {
+  position: absolute;
+  z-index: 2;
+  transform: translateX(-50%);
+  font-size: 0.85rem;
+  font-weight: 700;
+  pointer-events: none;
+  animation: floatUp 0.7s ease-out forwards;
+}
+
+@keyframes floatUp {
+  0%   { opacity: 1; transform: translateX(-50%) translateY(0); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-36px); }
+}
+
+/* --- Solo results screen (from the original) ---------------------------- */
+.solo-results {
+  background: radial-gradient(ellipse at center, #001a1f 0%, var(--bg) 70%);
+  text-align: center;
+}
+
+.solo-results h2 {
+  color: var(--muted);
+  font-size: clamp(1rem, 3vw, 1.4rem);
+  font-weight: 900;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+}
+
+.big-avg {
+  color: var(--dot);
+  font-size: clamp(4rem, 14vw, 7rem);
+  font-weight: 900;
+  line-height: 1;
+  text-shadow: 0 0 40px var(--dot-glow);
+}
+
+.avg-unit {
+  color: var(--muted);
+  font-size: 0.9rem;
+}
+
+.result-stats {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+
+.result-stat {
+  min-width: 116px;
+  display: grid;
+  gap: 4px;
+  padding: 12px 18px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(16, 16, 30, 0.82);
+  text-align: center;
+}
+
+.result-stat span {
+  color: var(--muted);
+  font-size: 0.62rem;
+  font-weight: 900;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.result-stat strong {
+  color: var(--dot);
+  font-size: 1.3rem;
+  font-weight: 900;
 }
 
 @media (prefers-reduced-motion: reduce) {
