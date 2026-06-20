@@ -1,7 +1,3 @@
-// A fixed mute toggle (bottom-left). Reads/writes the persisted mute flag in
-// sounds.js, so the choice survives reloads. Clicking unmute plays a tick so
-// you immediately hear it's back on.
-
 import { useState } from 'react';
 import { isMuted, setMuted, sounds } from './sounds.js';
 

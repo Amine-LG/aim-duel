@@ -1,72 +1,128 @@
-// The realtime context. One Socket.IO connection for the whole app, created
-// once and shared via context. It connects to the app's own origin — in dev the
-// Vite proxy forwards /socket.io to the backend; in production one origin serves
-// both — so there's never a hardcoded backend URL.
-
 import { createContext, useContext, useEffect, useMemo, useState } from 'react';
 import { io } from 'socket.io-client';
 
-// A stable per-browser id so the server recognizes the same player across
-// refreshes and reconnects. Generated once, kept in localStorage.
-function loadPresenceId() {
-  const key = 'aim-duel-presence-id';
+const presenceStorageKey = 'aim-duel-presence-id';
+
+const initialStatus = {
+  state: 'connecting',
+  onlineCount: null
+};
+
+const SocketContext = createContext({
+  socket: null,
+  status: initialStatus
+});
+
+function createPresenceId() {
+  if (window.crypto?.randomUUID) {
+    return window.crypto.randomUUID();
+  }
+
+  return `presence-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function getPresenceId() {
+  // localStorage so the same identity survives tab close + reopen (even in a
+  // new tab) and the server's same-presence resume path recognises the player.
   try {
-    let id = window.localStorage.getItem(key);
-    if (!id) {
-      id = window.crypto?.randomUUID?.() || `p-${Date.now()}-${Math.random().toString(36).slice(2)}`;
-      window.localStorage.setItem(key, id);
-    }
-    return id;
+    const existingPresenceId = window.localStorage.getItem(presenceStorageKey);
+    if (existingPresenceId) return existingPresenceId;
+
+    const presenceId = createPresenceId();
+    window.localStorage.setItem(presenceStorageKey, presenceId);
+    return presenceId;
   } catch {
-    return `p-${Date.now()}-${Math.random().toString(36).slice(2)}`;
+    return createPresenceId();
   }
 }
 
-const SocketContext = createContext(null);
-
 export function SocketProvider({ children }) {
-  const presenceId = useMemo(loadPresenceId, []);
-  // `io()` with no URL targets the page's origin; the handshake carries the id.
-  const socket = useMemo(() => io({ auth: { presenceId } }), [presenceId]);
-
-  const [status, setStatus] = useState('connecting'); // connecting | connected | disconnected
-  const [onlineCount, setOnlineCount] = useState(null);
+  const [socket, setSocket] = useState(null);
+  const [status, setStatus] = useState(initialStatus);
 
   useEffect(() => {
-    const onConnect = () => setStatus('connected');
-    const onDisconnect = () => setStatus('disconnected');
-    const onCount = (payload) => setOnlineCount(payload?.onlineCount ?? null);
+    const presenceId = getPresenceId();
+    const realtimeSocket = io(window.location.origin, {
+      path: '/socket.io',
+      auth: { presenceId },
+      transports: ['websocket', 'polling'],
+      reconnection: true,
+      reconnectionDelay: 500,
+      reconnectionDelayMax: 3000,
+      timeout: 5000
+    });
 
-    socket.on('connect', onConnect);
-    socket.on('disconnect', onDisconnect);
-    socket.on('server_status', onCount);
-    socket.on('online_count', onCount);
+    const setReconnecting = () => {
+      setStatus((current) => ({ ...current, state: 'reconnecting' }));
+    };
 
-    // If we connected before the listeners attached, reflect it now.
-    if (socket.connected) setStatus('connected');
+    const setOnlineCount = (payload) => {
+      if (typeof payload?.onlineCount !== 'number') return;
+      setStatus((current) => ({ ...current, onlineCount: payload.onlineCount }));
+    };
+
+    realtimeSocket.on('connect', () => {
+      setStatus((current) => ({ ...current, state: 'connected' }));
+    });
+
+    realtimeSocket.on('disconnect', () => {
+      setStatus((current) => ({ ...current, state: 'disconnected' }));
+    });
+
+    realtimeSocket.on('connect_error', () => {
+      setStatus((current) => ({ ...current, state: 'disconnected' }));
+    });
+
+    realtimeSocket.io.on('reconnect_attempt', setReconnecting);
+    realtimeSocket.io.on('reconnect', () => {
+      setStatus((current) => ({ ...current, state: 'connected' }));
+    });
+    realtimeSocket.io.on('reconnect_error', setReconnecting);
+
+    realtimeSocket.on('server_status', (payload) => {
+      const onlineCount =
+        typeof payload?.onlineCount === 'number'
+          ? payload.onlineCount
+          : typeof payload?.connectedCount === 'number'
+            ? payload.connectedCount
+            : null;
+
+      if (onlineCount !== null) {
+        setStatus((current) => ({ ...current, onlineCount }));
+      }
+    });
+    realtimeSocket.on('online_count', setOnlineCount);
+
+    // pagehide fires when the tab is really going away (close, hard navigation
+    // off the SPA). Explicitly disconnect so the server pauses the match and
+    // drops the Live counter immediately instead of waiting for ping timeout.
+    // Skip bfcache (event.persisted = true) — the page may come right back.
+    const handlePageHide = (event) => {
+      if (event.persisted) return;
+      try {
+        realtimeSocket.disconnect();
+      } catch {
+        /* ignore */
+      }
+    };
+    window.addEventListener('pagehide', handlePageHide);
+
+    setSocket(realtimeSocket);
 
     return () => {
-      socket.off('connect', onConnect);
-      socket.off('disconnect', onDisconnect);
-      socket.off('server_status', onCount);
-      socket.off('online_count', onCount);
-      // Intentionally NOT closing the socket: this provider lives for the app's
-      // whole lifetime, and closing on effect cleanup would drop the connection
-      // under React StrictMode's mount→cleanup→mount in dev. The browser tears
-      // the socket down on page unload, which the server sees as a disconnect.
+      window.removeEventListener('pagehide', handlePageHide);
+      realtimeSocket.io.off('reconnect_attempt', setReconnecting);
+      realtimeSocket.io.off('reconnect_error', setReconnecting);
+      realtimeSocket.disconnect();
+      setSocket(null);
     };
-  }, [socket]);
+  }, []);
 
-  const value = useMemo(
-    () => ({ socket, presenceId, status, onlineCount }),
-    [socket, presenceId, status, onlineCount]
-  );
+  const value = useMemo(() => ({ socket, status }), [socket, status]);
 
   return <SocketContext.Provider value={value}>{children}</SocketContext.Provider>;
 }
 
-export function useSocket() {
-  const ctx = useContext(SocketContext);
-  if (!ctx) throw new Error('useSocket must be used within a SocketProvider');
-  return ctx;
+export function useRealtimeSocket() {
+  return useContext(SocketContext);
 }

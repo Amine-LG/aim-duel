@@ -1,16 +1,42 @@
-// A small fixed pill (bottom-right) showing the realtime connection state and
-// the live online count. Reads straight from the socket context.
+import { useRealtimeSocket } from './socket.jsx';
 
-import { useSocket } from './socket.jsx';
-
-export default function RealtimeStatus() {
-  const { status, onlineCount } = useSocket();
+export default function RealtimeStatus({ compact = false }) {
+  const { status } = useRealtimeSocket();
+  const stateLabel =
+    status.state === 'connected'
+      ? 'Connected'
+      : status.state === 'disconnected'
+        ? 'Disconnected'
+        : status.state === 'reconnecting'
+          ? 'Reconnecting'
+          : 'Connecting';
+  const hasCount = typeof status.onlineCount === 'number';
+  const accessibleLabel = `Realtime ${stateLabel.toLowerCase()}${
+    hasCount ? `, ${status.onlineCount} online` : ''
+  }`;
+  const visualLabel =
+    status.state === 'connected'
+      ? 'Live'
+      : status.state === 'disconnected'
+        ? 'Off'
+        : 'Sync';
 
   return (
-    <div className={`realtime-status ${status}`}>
-      <span className="realtime-dot" />
-      <span className="realtime-label">Live</span>
-      {onlineCount != null && <span className="realtime-count">{onlineCount}</span>}
-    </div>
+    <aside
+      className={`realtime-status ${status.state}${compact ? ' compact' : ''}`}
+      aria-label={accessibleLabel}
+      aria-live="polite"
+      title={accessibleLabel}
+    >
+      <span className="realtime-dot" aria-hidden="true" />
+      <span className="realtime-label" aria-hidden="true">
+        {visualLabel}
+      </span>
+      {hasCount && (
+        <span className="realtime-count" aria-hidden="true">
+          {status.onlineCount}
+        </span>
+      )}
+    </aside>
   );
 }
