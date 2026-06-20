@@ -1,111 +1,216 @@
-:root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+/* Aim Duel — global styles.
+   Design tokens + base reset + the home/landing screen only. Game, lobby,
+   countdown, and results styles are added in their own steps as those screens
+   get built, so this file grows with the app instead of shipping dead rules. */
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
-
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
-  color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-
-  @media (max-width: 1024px) {
-    font-size: 16px;
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
-
-  #social .button-icon {
-    filter: invert(1) brightness(2);
-  }
-}
-
-body {
+*,
+*::before,
+*::after {
   margin: 0;
-}
-
-#root {
-  width: 1126px;
-  max-width: 100%;
-  margin: 0 auto;
-  text-align: center;
-  border-inline: 1px solid var(--border);
-  min-height: 100svh;
-  display: flex;
-  flex-direction: column;
+  padding: 0;
   box-sizing: border-box;
 }
 
-h1,
-h2 {
-  font-family: var(--heading);
-  font-weight: 500;
-  color: var(--text-h);
+:root {
+  --bg: #080810;
+  --surface: #10101e;
+  --border: #1e1e30;
+  --dot: #00e5ff;
+  --dot-glow: rgba(0, 229, 255, 0.35);
+  --bomb: #ff1744;
+  --bomb-glow: rgba(255, 23, 68, 0.4);
+  --gold: #ffd740;
+  --muted: #444466;
 }
 
-h1 {
-  font-size: 56px;
-  letter-spacing: -1.68px;
-  margin: 32px 0;
-  @media (max-width: 1024px) {
-    font-size: 36px;
-    margin: 20px 0;
-  }
-}
-h2 {
-  font-size: 24px;
-  line-height: 118%;
-  letter-spacing: -0.24px;
-  margin: 0 0 8px;
-  @media (max-width: 1024px) {
-    font-size: 20px;
-  }
-}
-p {
-  margin: 0;
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
 }
 
-code,
-.counter {
-  font-family: var(--mono);
+body {
+  background: var(--bg);
+  color: #fff;
+  font-family: "Segoe UI", system-ui, sans-serif;
+  overflow: hidden;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+button {
+  font: inherit;
+}
+
+.app {
+  position: fixed;
+  inset: 0;
+  background: var(--bg);
+}
+
+/* --- Screens: full-screen, vertically-centered panels ------------------- */
+.screen {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  padding: 32px 24px 64px;
+  animation: screenIn 0.22s ease-out both;
+}
+
+@keyframes screenIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* --- Home / landing ----------------------------------------------------- */
+.home-logo {
+  width: 80px;
+  height: 80px;
+  margin-bottom: 8px;
+  border-radius: 14px;
+  box-shadow:
+    0 0 40px var(--dot-glow),
+    0 0 80px rgba(0, 229, 255, 0.12);
+}
+
+#start h1 {
+  font-size: clamp(2rem, 6vw, 3rem);
+  font-weight: 900;
+  text-align: center;
+}
+
+.sub {
+  max-width: 320px;
+  color: var(--muted);
+  font-size: clamp(0.85rem, 2.5vw, 1rem);
+  line-height: 1.7;
+  text-align: center;
+}
+
+.sub b {
+  color: var(--bomb);
+}
+
+/* --- Buttons: cyan primary, ghost outline secondary --------------------- */
+.btn {
+  min-height: 52px;
+  padding: 16px 52px;
+  border: none;
+  border-radius: 50px;
+  background: var(--dot);
+  color: #000;
+  box-shadow: 0 0 24px var(--dot-glow);
+  cursor: pointer;
+  font-size: 1.05rem;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  transition: transform 0.12s, box-shadow 0.12s, border-color 0.12s, color 0.12s;
+}
+
+.btn:hover:not(:disabled) {
+  transform: scale(1.04);
+  box-shadow: 0 0 36px var(--dot-glow);
+}
+
+.btn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.72;
+}
+
+.btn-ghost {
+  min-height: 48px;
+  padding: 13px 36px;
+  border: 1.5px solid var(--border);
+  background: transparent;
+  color: var(--muted);
+  box-shadow: none;
+  font-weight: 700;
+}
+
+.btn-ghost:hover:not(:disabled) {
+  border-color: #444;
+  color: #aaa;
+}
+
+.btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+
+.btn-row.stack {
+  width: min(100%, 320px);
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.btn-row.stack .btn,
+.btn-row.stack .btn-ghost {
+  width: 100%;
+}
+
+/* --- Rule pills --------------------------------------------------------- */
+.home-steps {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.home-steps span {
   display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
+  align-items: center;
+  gap: 7px;
+  padding: 6px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(16, 16, 30, 0.7);
+  color: var(--muted);
+  font-size: 0.74rem;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
-code {
-  font-size: 15px;
-  line-height: 135%;
-  padding: 4px 8px;
-  background: var(--code-bg);
+.home-steps .rule::before {
+  content: '';
+  width: 9px;
+  height: 9px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+}
+
+.home-steps .rule.cyan::before {
+  background: var(--dot);
+  box-shadow: 0 0 8px var(--dot-glow);
+}
+
+.home-steps .rule.bomb::before {
+  background: var(--bomb);
+  box-shadow: 0 0 8px var(--bomb-glow);
+}
+
+.home-steps .rule.win::before {
+  background: var(--gold);
+  box-shadow: 0 0 8px rgba(255, 215, 64, 0.4);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
 }
