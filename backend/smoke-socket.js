@@ -1,21 +1,39 @@
-// Throwaway smoke test for the realtime layer. Start the server, then run:
+// Throwaway smoke test for the room/lobby domain. Start the server, then run:
 //   node smoke-socket.js
-// It connects with a presenceId, prints the server's greeting and the online
-// count, then disconnects. Not part of the app — delete it whenever you like.
+// Alice creates a room, Bob joins by its code, then both ready up. The room
+// each client sees is printed at every step. Not part of the app — delete it
+// whenever you like.
 
 const { io } = require('socket.io-client');
 
-const socket = io('http://localhost:3000', {
-  auth: { presenceId: 'smoke-test-presence-1234' }
+const connect = (presenceId) => io('http://localhost:3000', { auth: { presenceId } });
+
+const alice = connect('smoke-alice-0001');
+const bob = connect('smoke-bob-0002');
+let code = null;
+
+alice.on('connect', () => alice.emit('create_room', { nickname: 'Alice' }));
+
+alice.on('room_created', (p) => {
+  code = p.code;
+  console.log(`Alice created room ${code}`);
+  bob.emit('join_room', { code, nickname: 'Bob' });
 });
 
-socket.on('connect', () => console.log('connected     socket.id =', socket.id));
-socket.on('server_status', (payload) => console.log('server_status', payload));
-socket.on('online_count', (payload) => console.log('online_count ', payload));
-socket.on('connect_error', (err) => console.log('connect_error:', err.message));
+bob.on('room_joined', () => {
+  console.log('Bob joined; both readying up');
+  alice.emit('player_ready');
+  bob.emit('player_ready');
+});
 
-// Give the events a moment to arrive, then leave.
+alice.on('room_state', (p) => console.log('  Alice sees', JSON.stringify(p.room)));
+bob.on('room_state', (p) => console.log('  Bob sees  ', JSON.stringify(p.room)));
+alice.on('room_error', (p) => console.log('Alice error:', p.message));
+bob.on('room_error', (p) => console.log('Bob error:', p.message));
+
+// Give the exchange a couple of seconds, then leave.
 setTimeout(() => {
-  socket.close();
+  alice.close();
+  bob.close();
   process.exit(0);
-}, 1500);
+}, 2000);
