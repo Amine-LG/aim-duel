@@ -1,10 +1,9 @@
 // The landing screen. Presentational only — it just calls the navigation
-// callbacks its parent (App) passes in. Solo Practice now opens the solo
-// screen; Create Room stays a placeholder until the Socket.IO backend exists.
-// Open Rooms, "return to game", and live status are deferred for the same
-// reason — they all need the backend, which comes in a later step.
+// callbacks its parent (App) passes in. Create Room and Join Room now open the
+// room form; Solo Practice opens the client-side practice game. Open Rooms,
+// "return to game", and live status are deferred to later steps.
 
-export default function HomeScreen({ onOpenSolo, onOpenCreateRoom }) {
+export default function HomeScreen({ onOpenCreateRoom, onOpenJoinRoom, onOpenSolo }) {
   return (
     <section id="start" className="screen">
       <img className="home-logo" src="/favicon.svg" alt="" aria-hidden="true" />
@@ -12,11 +11,14 @@ export default function HomeScreen({ onOpenSolo, onOpenCreateRoom }) {
       <p className="sub">Train your aim today. Duel your friends next.</p>
 
       <div className="btn-row stack">
-        <button className="btn btn-ghost" type="button" onClick={onOpenSolo}>
-          Solo Practice
-        </button>
         <button className="btn" type="button" onClick={onOpenCreateRoom}>
           Create Room
+        </button>
+        <button className="btn btn-ghost" type="button" onClick={onOpenJoinRoom}>
+          Join Room
+        </button>
+        <button className="btn btn-ghost" type="button" onClick={onOpenSolo}>
+          Solo Practice
         </button>
       </div>
 

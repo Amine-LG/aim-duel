@@ -541,6 +541,141 @@ button {
   text-align: center;
 }
 
+/* --- Room form (create / join) ------------------------------------------ */
+.room-panel {
+  width: min(100%, 430px);
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(16, 16, 30, 0.82);
+}
+
+.field {
+  display: grid;
+  gap: 8px;
+  text-align: left;
+}
+
+.field span {
+  color: var(--muted);
+  font-size: 0.66rem;
+  font-weight: 900;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.field input {
+  width: 100%;
+  padding: 13px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  outline: none;
+  background: #0b0b16;
+  color: #fff;
+  font: inherit;
+  font-weight: 700;
+}
+
+.field input:focus {
+  border-color: var(--dot);
+  box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.12);
+}
+
+.field input::placeholder {
+  color: var(--muted);
+}
+
+.code-input {
+  letter-spacing: 4px;
+  text-transform: uppercase;
+}
+
+.room-error {
+  padding: 10px 12px;
+  border: 1px solid rgba(255, 23, 68, 0.35);
+  border-radius: 8px;
+  background: rgba(255, 23, 68, 0.08);
+  color: #ff8aa0;
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-align: center;
+}
+
+/* --- Lobby -------------------------------------------------------------- */
+.room-code-row {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.room-code {
+  color: var(--dot);
+  font-size: clamp(2rem, 9vw, 4.2rem);
+  font-weight: 900;
+  letter-spacing: 8px;
+  line-height: 1;
+  text-shadow: 0 0 34px var(--dot-glow);
+}
+
+.lobby-slots {
+  width: min(100%, 500px);
+  display: grid;
+  gap: 10px;
+}
+
+.player-slot {
+  min-height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(16, 16, 30, 0.82);
+  text-align: left;
+}
+
+.player-slot strong {
+  display: block;
+  margin-top: 3px;
+  color: #fff;
+  font-size: 1.05rem;
+}
+
+.player-slot.waiting strong {
+  color: var(--muted);
+}
+
+.player-slot.ready {
+  border-color: rgba(0, 229, 255, 0.62);
+  background: rgba(0, 229, 255, 0.08);
+  box-shadow: 0 0 20px rgba(0, 229, 255, 0.14), inset 0 0 0 1px rgba(0, 229, 255, 0.08);
+}
+
+.slot-label,
+.slot-state {
+  color: var(--muted);
+  font-size: 0.64rem;
+  font-weight: 900;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.slot-state {
+  color: var(--dot);
+}
+
+.lobby-wait {
+  color: var(--gold);
+  font-size: 0.88rem;
+  font-weight: 800;
+  text-align: center;
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
