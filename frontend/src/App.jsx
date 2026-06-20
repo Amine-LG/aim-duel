@@ -28,6 +28,7 @@ export default function App() {
   const [scores, setScores] = useState([]);
   const [target, setTarget] = useState(null);
   const [result, setResult] = useState(null);
+  const [winScore, setWinScore] = useState(10);
 
   useEffect(() => {
     const enterLobby = (payload) => {
@@ -43,6 +44,7 @@ export default function App() {
     const onCountdown = (payload) => setCountdownValue(payload.value);
     const onStarted = (payload) => {
       setScores(payload.scores || []);
+      setWinScore(payload.winScore || 10);
       setTarget(null);
       setResult(null);
     };
@@ -142,11 +144,13 @@ export default function App() {
 
       {inRoom && (status === 'countdown' || status === 'playing') && (
         <RaceScreen
+          room={room}
           selfSlot={selfSlot}
           status={status}
           countdownValue={countdownValue}
           scores={scores}
           target={target}
+          winScore={winScore}
           onTargetClick={(t) => socket.emit('target_click', { targetId: t.id, matchId: t.matchId })}
           onLeave={leaveAndHome}
         />

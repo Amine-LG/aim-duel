@@ -682,66 +682,266 @@ button {
   text-align: center;
 }
 
-/* --- Multiplayer race --------------------------------------------------- */
+/* --- Multiplayer race HUD (matches the original) ------------------------ */
+.home-logo.small {
+  width: 58px;
+  height: 58px;
+}
+
+.online-countdown {
+  background: radial-gradient(ellipse at center, #001a1f 0%, var(--bg) 70%);
+  text-align: center;
+}
+
+.countdown-value.online {
+  min-width: min(80vw, 420px);
+}
+
 .race-hud {
   position: relative;
   width: 100%;
+  min-height: 72px;
   flex-shrink: 0;
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
   align-items: center;
-  justify-content: space-around;
   gap: 12px;
-  padding: 12px 48px;
+  padding: 12px 44px;
   border-bottom: 1px solid var(--border);
   background: var(--surface);
 }
 
-.race-score {
+.race-player,
+.race-room {
   min-width: 0;
   text-align: center;
 }
 
-.race-score span {
+.race-player span,
+.race-room span {
   display: block;
   overflow: hidden;
   color: var(--muted);
-  font-size: 0.6rem;
+  font-size: 0.62rem;
   font-weight: 900;
   letter-spacing: 1px;
-  text-transform: uppercase;
   text-overflow: ellipsis;
+  text-transform: uppercase;
   white-space: nowrap;
 }
 
-.race-score strong {
+.race-player strong {
   display: block;
   color: #fff;
-  font-size: clamp(1.8rem, 6vw, 2.6rem);
+  font-size: clamp(1.8rem, 6vw, 2.8rem);
   font-weight: 900;
   line-height: 1;
 }
 
-.race-score.self strong {
+.race-player.self strong,
+.race-room strong {
   color: var(--dot);
   text-shadow: 0 0 22px var(--dot-glow);
 }
 
-/* Results reuse .solo-results / .result-stats / .result-stat (+ win/loss tint) */
+.race-room strong {
+  display: block;
+  margin-top: 2px;
+  font-size: 0.9rem;
+  letter-spacing: 3px;
+}
+
+.score-bump {
+  animation: scoreBump 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes scoreBump {
+  0% { transform: scale(1.45); }
+  100% { transform: scale(1); }
+}
+
+.race-feedback {
+  position: absolute;
+  left: 50%;
+  bottom: 24px;
+  z-index: 3;
+  max-width: min(90vw, 420px);
+  padding: 10px 18px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: rgba(16, 16, 30, 0.82);
+  color: var(--muted);
+  font-size: 0.85rem;
+  font-weight: 900;
+  text-align: center;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+/* --- Race results (matches the original) -------------------------------- */
+.race-results {
+  text-align: center;
+  background: radial-gradient(ellipse at center, #001a1f 0%, var(--bg) 70%);
+}
+
+.race-results.win {
+  background: radial-gradient(ellipse at center, rgba(255, 215, 64, 0.12) 0%, rgba(0, 229, 255, 0.08) 34%, var(--bg) 72%);
+}
+
+.race-results.loss {
+  background: radial-gradient(ellipse at center, rgba(255, 23, 68, 0.16) 0%, rgba(16, 16, 30, 0.7) 42%, var(--bg) 76%);
+}
+
+.race-results h1 {
+  max-width: 620px;
+  font-size: clamp(2rem, 7vw, 4rem);
+  font-weight: 900;
+}
+
 .result-icon {
   font-size: clamp(2.4rem, 9vw, 4.8rem);
   line-height: 1;
 }
 
-.solo-results.win h2,
-.solo-results.win .result-icon {
+.race-results.win h1,
+.race-results.win .result-icon,
+.race-results.win .result-winner {
   color: #ffe066;
-  text-shadow: 0 0 24px rgba(255, 224, 102, 0.35);
+  text-shadow: 0 0 24px rgba(255, 224, 102, 0.35), 0 0 38px var(--dot-glow);
 }
 
-.solo-results.loss h2,
-.solo-results.loss .result-icon {
+.race-results.loss h1,
+.race-results.loss .result-icon,
+.race-results.loss .result-winner {
   color: var(--bomb);
-  text-shadow: 0 0 26px var(--bomb-glow);
+  text-shadow: 0 0 30px var(--bomb-glow);
+}
+
+.final-scoreline {
+  color: var(--dot);
+  font-size: clamp(3rem, 12vw, 6rem);
+  font-weight: 900;
+  line-height: 1;
+  text-shadow: 0 0 34px var(--dot-glow);
+  animation: scoreBump 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) 0.15s both;
+}
+
+.race-results.win .final-scoreline {
+  color: #ffe066;
+  text-shadow: 0 0 20px rgba(255, 224, 102, 0.35), 0 0 34px var(--dot-glow);
+}
+
+.race-results.loss .final-scoreline {
+  color: #ff8aa0;
+  text-shadow: 0 0 34px var(--bomb-glow);
+}
+
+.result-winner {
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 900;
+  text-align: center;
+}
+
+.final-score {
+  width: min(100%, 360px);
+  display: grid;
+  gap: 8px;
+}
+
+.final-score-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: rgba(16, 16, 30, 0.82);
+}
+
+.final-score-row.winner {
+  border-color: rgba(255, 224, 102, 0.62);
+  background:
+    linear-gradient(90deg, rgba(255, 224, 102, 0.14), rgba(0, 229, 255, 0.08)),
+    rgba(16, 16, 30, 0.9);
+  box-shadow: 0 0 24px rgba(255, 224, 102, 0.13);
+}
+
+.final-score-row.loser {
+  border-color: rgba(255, 23, 68, 0.38);
+  background:
+    linear-gradient(90deg, rgba(255, 23, 68, 0.12), rgba(16, 16, 30, 0.88)),
+    rgba(16, 16, 30, 0.9);
+}
+
+.final-score-row.self {
+  outline: 1px solid rgba(255, 255, 255, 0.08);
+  outline-offset: 2px;
+}
+
+.final-player-name {
+  overflow: hidden;
+  color: #fff;
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.final-score-values strong {
+  color: var(--dot);
+  font-size: 1.4rem;
+  font-weight: 900;
+}
+
+.final-score-row.winner .final-score-values strong {
+  color: #ffe066;
+}
+
+.final-score-row.loser .final-score-values strong {
+  color: #ff8aa0;
+}
+
+/* --- Lobby: ready button + note (matches the original) ------------------ */
+.ready-panel {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+}
+
+.ready-button.needs-ready {
+  animation: readyPulse 1.6s ease-in-out infinite;
+}
+
+.ready-button.is-ready {
+  border: 1px solid rgba(0, 229, 255, 0.7);
+  background: rgba(0, 229, 255, 0.16);
+  color: var(--dot);
+  box-shadow: 0 0 28px rgba(0, 229, 255, 0.2), inset 0 0 0 1px rgba(0, 229, 255, 0.12);
+  opacity: 1;
+}
+
+.ready-button small {
+  display: block;
+  margin-top: 4px;
+  font-size: 0.68rem;
+  font-weight: 600;
+  opacity: 0.75;
+}
+
+@keyframes readyPulse {
+  0%, 100% { box-shadow: 0 0 24px rgba(0, 229, 255, 0.28); transform: scale(1); }
+  50% { box-shadow: 0 0 38px rgba(0, 229, 255, 0.46); transform: scale(1.035); }
+}
+
+.lobby-note {
+  max-width: 420px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 700;
+  line-height: 1.5;
+  text-align: center;
 }
 
 @media (prefers-reduced-motion: reduce) {
