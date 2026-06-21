@@ -13,4 +13,5 @@ resources:
 # by commit SHA, and Argo CD will sync that change to the cluster.
 images:
   - name: aim-duel
-    newTag: local
+    newName: ghcr.io/amine-lg/aim-duel   # lowercase for GHCR
+    newTag: local                        # CI overwrites this with the commit SHA

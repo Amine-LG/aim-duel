@@ -11,14 +11,19 @@ metadata:
     # connections; raise them so matches and lobbies stay connected.
     nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
     nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    # cert-manager issues/renews the TLS cert into the secret named below, using
+    # the ClusterIssuer created during cluster bootstrap. WSS replaces WS with no
+    # app change. For a rate-limit-safe dry run, temporarily set this to
+    # letsencrypt-staging, confirm the cert issues, then switch back to prod.
+    cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
   ingressClassName: nginx
-  # Replace with your own hostname. No domain is hardcoded anywhere in this
-  # repo. TLS is intentionally not wired yet — it arrives as a later step
-  # (cert-manager ClusterIssuer + a `tls:` block here), at which point WSS
-  # replaces WS with no app change.
+  tls:
+    - hosts:
+        - aminelg.duckdns.org
+      secretName: aim-duel-tls
   rules:
-    - host: aim-duel.example.com
+    - host: aminelg.duckdns.org
       http:
         paths:
           - path: /
