@@ -14,4 +14,4 @@ resources:
 images:
   - name: aim-duel
     newName: ghcr.io/amine-lg/aim-duel   # lowercase for GHCR
-    newTag: local                        # CI overwrites this with the commit SHA
+    newTag: b719c25b6875838f799988f0d9be2cb3722be4ea
