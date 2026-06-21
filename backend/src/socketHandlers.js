@@ -9,17 +9,38 @@ const config = require('./config');
 const { track } = require('./instrumentation');
 const { isValidPresenceId, normalizeNickname, normalizeRoomCode } = require('./validation');
 
+// A handshake is allowed when it comes from a non-browser client (no Origin),
+// when the page and the socket share an origin (same-origin — the normal
+// single-origin deployment where one process serves the SPA *and* the
+// WebSocket; always safe, since CORS exists to police *cross*-origin), or when
+// the Origin is explicitly allow-listed for a cross-origin setup such as the
+// Vite dev server (config.allowedOrigins / ALLOWED_ORIGINS).
+function isOriginAllowed(origin, host) {
+  if (!origin) return true;
+  if (config.allowedOrigins.has(origin)) return true;
+  try {
+    return new URL(origin).host === host;
+  } catch {
+    return false;
+  }
+}
+
 function createSocketServer(httpServer, { adapter = null } = {}) {
   const io = new Server(httpServer, {
     transports: ['websocket', 'polling'],
+    // The security gate. Unlike the `cors` origin callback it receives the full
+    // request, so it can compare Origin against Host and accept same-origin
+    // handshakes — the ones a single-origin container actually makes.
+    allowRequest(req, callback) {
+      const ok = isOriginAllowed(req.headers.origin, req.headers.host);
+      callback(ok ? null : 'origin_not_allowed', ok);
+    },
+    // CORS response headers only matter for genuine cross-origin (allow-listed)
+    // browsers; same-origin requests need none. Never *reject* here — that is
+    // allowRequest's job — or same-origin handshakes get a spurious 400.
     cors: {
       origin(origin, callback) {
-        if (!origin || config.allowedOrigins.has(origin)) {
-          callback(null, true);
-          return;
-        }
-
-        callback(new Error('Socket.IO origin not allowed'));
+        callback(null, !origin || config.allowedOrigins.has(origin));
       },
       methods: ['GET', 'POST'],
       credentials: false
