@@ -1024,7 +1024,10 @@ export default function App() {
     if (!code) return;
 
     const inviteUrl = inviteUrlWithNickname(
-      roomSession.shareUrl || `${window.location.origin}/join/${code}`,
+      // Always the browser's own origin — the page is served single-origin, so
+      // this is the correct public URL. (The server-built shareUrl can't know
+      // the real origin and falls back to localhost.)
+      `${window.location.origin}/join/${code}`,
       roomForm.friendNickname
     );
     try {
@@ -1034,14 +1037,17 @@ export default function App() {
     }
 
     showCopiedToast();
-  }, [roomForm.friendNickname, roomSession.room?.code, roomSession.shareUrl, showCopiedToast]);
+  }, [roomForm.friendNickname, roomSession.room?.code, showCopiedToast]);
 
   const shareInvite = useCallback(async () => {
     const code = roomSession.room?.code;
     if (!code) return;
 
     const inviteUrl = inviteUrlWithNickname(
-      roomSession.shareUrl || `${window.location.origin}/join/${code}`,
+      // Always the browser's own origin — the page is served single-origin, so
+      // this is the correct public URL. (The server-built shareUrl can't know
+      // the real origin and falls back to localhost.)
+      `${window.location.origin}/join/${code}`,
       roomForm.friendNickname
     );
     const text = `Play Aim Duel with me! Tap to join my room: ${inviteUrl}`;
@@ -1064,7 +1070,7 @@ export default function App() {
     }
 
     showCopiedToast();
-  }, [roomForm.friendNickname, roomSession.room?.code, roomSession.shareUrl, showCopiedToast]);
+  }, [roomForm.friendNickname, roomSession.room?.code, showCopiedToast]);
 
   const handleRaceTargetDown = useCallback(
     (event) => {
@@ -1165,7 +1171,7 @@ export default function App() {
   };
   const inviteUrl = lobbyRoom
     ? inviteUrlWithNickname(
-        roomSession.shareUrl || `${window.location.origin}/join/${lobbyRoom.code}`,
+        `${window.location.origin}/join/${lobbyRoom.code}`,
         roomForm.friendNickname
       )
     : '';

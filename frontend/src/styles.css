@@ -304,6 +304,13 @@ button {
   width: 100%;
 }
 
+/* Inside a form panel the row is a grid item: at 320px it sits left-aligned in
+   the wider panel and looks off-center. Let it fill the panel so Create/Back
+   line up with the input fields above them. */
+.room-panel .btn-row {
+  width: 100%;
+}
+
 .return-room {
   width: min(100%, 320px);
   border: 1px solid rgba(255, 215, 64, 0.55);
@@ -525,8 +532,25 @@ button {
 #start,
 #room,
 #lobby {
+  /* Center the content when it fits, but scroll from the TOP when it's taller
+     than the viewport. Plain justify-content:center (from .screen) clips the
+     overflow above the fold on short phones — the auto margins below collapse
+     to 0 when there's no spare room, so nothing gets cut off. */
+  justify-content: flex-start;
   overflow-y: auto;
   text-align: center;
+}
+
+#start > :first-child,
+#room > :first-child,
+#lobby > :first-child {
+  margin-top: auto;
+}
+
+#start > :last-child,
+#room > :last-child,
+#lobby > :last-child {
+  margin-bottom: auto;
 }
 
 #room h1,
@@ -1587,6 +1611,22 @@ button {
   .screen {
     gap: 18px;
     padding: 28px 18px 58px;
+  }
+
+  /* The lobby is the tallest screen (code, invite, two slots, ready, notes).
+     Tighten its spacing and trim the logo so it fits a phone without scrolling. */
+  #lobby {
+    gap: 11px;
+  }
+
+  #lobby .home-logo.small {
+    width: 44px;
+    height: 44px;
+    margin-bottom: 2px;
+  }
+
+  #lobby .lobby-slots {
+    gap: 8px;
   }
 
   #hud {
