@@ -1,0 +1,30 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: aim-duel
+  labels:
+    app.kubernetes.io/name: aim-duel
+    app.kubernetes.io/part-of: aim-duel
+  annotations:
+    # Socket.IO holds long-lived WebSocket connections. ingress-nginx upgrades
+    # them automatically, but the default 60s proxy timeouts would cut idle
+    # connections; raise them so matches and lobbies stay connected.
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+spec:
+  ingressClassName: nginx
+  # Replace with your own hostname. No domain is hardcoded anywhere in this
+  # repo. TLS is intentionally not wired yet — it arrives as a later step
+  # (cert-manager ClusterIssuer + a `tls:` block here), at which point WSS
+  # replaces WS with no app change.
+  rules:
+    - host: aim-duel.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: aim-duel
+                port:
+                  number: 80

@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: aim-duel
+  labels:
+    app.kubernetes.io/name: aim-duel
+    app.kubernetes.io/part-of: aim-duel

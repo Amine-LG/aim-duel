@@ -1,0 +1,87 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aim-duel
+  labels:
+    app.kubernetes.io/name: aim-duel
+    app.kubernetes.io/part-of: aim-duel
+spec:
+  # Single replica on purpose: room/match state lives in this pod's memory
+  # (live setTimeout handles for countdown, target lifetime, claim window,
+  # rematch and disconnect grace). There is no shared store, so a second pod
+  # could not see the first pod's rooms. Recreate avoids ever running two
+  # stateful pods side by side during a rollout — the trade-off is that every
+  # deploy drops live matches (clients recover to a clean "room not found").
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: aim-duel
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: aim-duel
+        app.kubernetes.io/part-of: aim-duel
+    spec:
+      # Comfortably above the app's own shutdown budget (drain 750ms +
+      # force-exit 8s) so graceful shutdown finishes before the kubelet
+      # sends SIGKILL.
+      terminationGracePeriodSeconds: 20
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+        seccompProfile:
+          type: RuntimeDefault
+      containers:
+        - name: web
+          # Built from the repo Containerfile. The kustomization image
+          # transformer is the single place to repoint this at a registry
+          # image (GHCR) once CI/GitOps is in place.
+          image: aim-duel:local
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: PORT
+              value: "3000"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            capabilities:
+              drop:
+                - ALL
+          ports:
+            - name: http
+              containerPort: 3000
+          # /ready returns 503 the moment graceful shutdown begins, so the pod
+          # is pulled from the Service endpoints before any socket is closed.
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: http
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          # /health stays 200 while the process is alive (including during
+          # drain); the kubelet only restarts a genuinely wedged process.
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 15
+            periodSeconds: 20
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              cpu: 250m
+              memory: 192Mi
+          # The root filesystem is read-only (nothing is written to disk — all
+          # state is in memory). A small writable emptyDir covers any /tmp use.
+          volumeMounts:
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: tmp
+          emptyDir: {}
