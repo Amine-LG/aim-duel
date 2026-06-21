@@ -1,0 +1,30 @@
+# Installed deps and build outputs — always rebuilt in-image.
+**/node_modules
+**/dist
+backend/public
+
+# Git + VCS metadata.
+.git
+.gitignore
+**/.gitignore
+
+# Local-only / runtime files that must never reach the image.
+**/.env
+**/.env.*
+**/npm-debug.log*
+*.log
+
+# Not needed to build or run the image.
+backend/test
+README.md
+frontend/README.md
+frontend/eslint.config.js
+
+# The container build files themselves.
+Containerfile
+.containerignore
+
+# Editor / OS noise.
+.DS_Store
+.vscode
+.idea
