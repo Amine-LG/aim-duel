@@ -7,11 +7,11 @@ resources:
   - 01-deployment.yaml
   - 02-service.yaml
   - 03-ingress.yaml
+  - 04-servicemonitor.yaml
+  - 05-grafana-dashboard.yaml
 
-# Single source of truth for the image. Today it points at the locally built
-# image; CI/GitOps will later rewrite newName/newTag to a registry image pinned
-# by commit SHA, and Argo CD will sync that change to the cluster.
+# CI rewrites newTag to the built commit SHA; Argo CD syncs the change.
 images:
   - name: aim-duel
-    newName: ghcr.io/amine-lg/aim-duel   # lowercase for GHCR
+    newName: ghcr.io/amine-lg/aim-duel
     newTag: aaf40851f7f0bbcf83f2f10ac8f15cdbe47577a4

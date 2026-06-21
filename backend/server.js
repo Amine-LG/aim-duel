@@ -18,7 +18,12 @@
 const http = require('node:http');
 const config = require('./src/config');
 const { createHttpApp } = require('./src/httpApp');
-const { snapshot } = require('./src/instrumentation');
+const {
+  snapshot,
+  setStatsProvider,
+  renderMetrics,
+  metricsContentType
+} = require('./src/instrumentation');
 const { createPresenceTracker } = require('./src/presence');
 const { createRoomService } = require('./src/roomService');
 const { createSocketServer, registerSocketHandlers } = require('./src/socketHandlers');
@@ -43,8 +48,42 @@ registerSocketHandlers(io, { presence, roomService });
 presence.startSweeper();
 roomService.startSweeper();
 
+// Feed the gauges their live values without instrumentation.js importing the
+// domain (dependency inversion): it asks for the shape, the assembler provides
+// it, recomputed fresh on every scrape.
+setStatsProvider(async () => ({
+  onlineCount: await presence.onlineCount(),
+  roomCount: roomService.roomCount()
+}));
+
 server.listen(config.port, () => {
   console.log(`Aim Duel server listening on port ${config.port}`);
+});
+
+// Metrics live on a SEPARATE listener (config.metricsPort, default 9091), never
+// on the game port. The ingress only routes the game port, so /metrics is
+// reachable only from inside the cluster (Prometheus scrapes it via a
+// ServiceMonitor). Exposing it on the public port would leak event-loop
+// internals, room counts, and the whole event taxonomy to the internet.
+const metricsServer = http.createServer((req, res) => {
+  if (req.method === 'GET' && req.url === '/metrics') {
+    renderMetrics()
+      .then((text) => {
+        res.writeHead(200, { 'Content-Type': metricsContentType });
+        res.end(text);
+      })
+      .catch(() => {
+        res.writeHead(500);
+        res.end();
+      });
+    return;
+  }
+  res.writeHead(404);
+  res.end();
+});
+
+metricsServer.listen(config.metricsPort, () => {
+  console.log(`Aim Duel metrics listening on port ${config.metricsPort}`);
 });
 
 function shutdown(signal) {
@@ -65,6 +104,7 @@ function shutdown(signal) {
     presence.stopSweeper();
     roomService.stopSweeper();
     roomService.deleteAllRooms();
+    metricsServer.close();
     io.close(() => {
       server.close(() => {
         process.exit(0);

@@ -45,6 +45,9 @@ spec:
           env:
             - name: PORT
               value: "3000"
+            # Metrics on a separate, cluster-internal port (never ingress-routed).
+            - name: METRICS_PORT
+              value: "9091"
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
@@ -54,6 +57,8 @@ spec:
           ports:
             - name: http
               containerPort: 3000
+            - name: metrics
+              containerPort: 9091
           # /ready returns 503 the moment graceful shutdown begins, so the pod
           # is pulled from the Service endpoints before any socket is closed.
           readinessProbe:

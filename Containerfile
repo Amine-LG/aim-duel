@@ -32,6 +32,8 @@ COPY --from=frontend-build /app/frontend/dist ./public
 # The app holds all state in memory and never writes to disk, so no chown.
 USER node
 
-EXPOSE 3000
+# Two ports, two trust levels: 3000 is the game (routed by the public ingress),
+# 9091 is /metrics (scraped only from inside the cluster, never ingress-routed).
+EXPOSE 3000 9091
 
 CMD ["node", "server.js"]

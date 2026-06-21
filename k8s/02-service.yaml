@@ -13,3 +13,8 @@ spec:
     - name: http
       port: 80
       targetPort: http
+    # Metrics port, exposed cluster-internally only. The ServiceMonitor's
+    # endpoints[].port references this name; the ingress never routes it.
+    - name: metrics
+      port: 9091
+      targetPort: metrics

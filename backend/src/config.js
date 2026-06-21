@@ -27,6 +27,10 @@ const port = intFromEnv('PORT', 3000);
 module.exports = {
   // Deployment (env-overridable)
   port,
+  // Prometheus metrics listen on their OWN port, never the game port. The
+  // public ingress only routes the game port, so /metrics is unreachable from
+  // the internet and only Prometheus (in-cluster) scrapes it. See server.js.
+  metricsPort: intFromEnv('METRICS_PORT', 9091),
   // Origin used to build invite links server-side. Defaults to localhost for
   // dev; set PUBLIC_ORIGIN to the real site origin in a deployment. (The client
   // also falls back to its own window.location.origin, so this is a backstop.)
