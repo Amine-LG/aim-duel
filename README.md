@@ -5,7 +5,7 @@ once both are ready a sequence of targets appears — first to 10 hits wins. It
 plays in the browser and runs as a container on Kubernetes. This repository holds
 the application along with the manifests and pipeline that deploy it.
 
-**Live:** https://aminelg.duckdns.org
+**Live:** https://aminelg.xyz
 
 [![Build and Push](https://github.com/Amine-LG/aim-duel/actions/workflows/build-push.yml/badge.svg)](https://github.com/Amine-LG/aim-duel/actions/workflows/build-push.yml)
 

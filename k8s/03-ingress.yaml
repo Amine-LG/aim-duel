@@ -15,15 +15,15 @@ metadata:
     # the ClusterIssuer created during cluster bootstrap. WSS replaces WS with no
     # app change. For a rate-limit-safe dry run, temporarily set this to
     # letsencrypt-staging, confirm the cert issues, then switch back to prod.
-    cert-manager.io/cluster-issuer: letsencrypt-prod
+    cert-manager.io/cluster-issuer: letsencrypt-staging
 spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - aminelg.duckdns.org
+        - aminelg.xyz
       secretName: aim-duel-tls
   rules:
-    - host: aminelg.duckdns.org
+    - host: aminelg.xyz
       http:
         paths:
           - path: /
