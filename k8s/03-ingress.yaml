@@ -15,7 +15,7 @@ metadata:
     # the ClusterIssuer created during cluster bootstrap. WSS replaces WS with no
     # app change. For a rate-limit-safe dry run, temporarily set this to
     # letsencrypt-staging, confirm the cert issues, then switch back to prod.
-    cert-manager.io/cluster-issuer: letsencrypt-staging
+    cert-manager.io/cluster-issuer: letsencrypt-prod
 spec:
   ingressClassName: nginx
   tls:
