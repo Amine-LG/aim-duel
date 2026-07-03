@@ -14,4 +14,4 @@ resources:
 images:
   - name: aim-duel
     newName: ghcr.io/amine-lg/aim-duel
-    newTag: c894cfe7b8c75e8f3c0154cebd4272f9d2850891
+    newTag: 7f5052965ea32d9c7e4c6709b990e753334d26fb
