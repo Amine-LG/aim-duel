@@ -20,10 +20,10 @@ spec:
   ingressClassName: nginx
   tls:
     - hosts:
-        - aminelg.xyz
+        - a.aminelg.com
       secretName: aim-duel-tls
   rules:
-    - host: aminelg.xyz
+    - host: a.aminelg.com
       http:
         paths:
           - path: /
